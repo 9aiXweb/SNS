@@ -4,31 +4,64 @@ from flask import g
 from flask import redirect
 from flask import render_template
 from flask import request
-from flask import url_for
+from flask import Flask
+from flask import url_for, send_from_directory
 from werkzeug.exceptions import abort
+from werkzeug.utils import secure_filename
+import os
+from flask import session
 
 from .auth import login_required
 from .db import get_db
 
 bp = Blueprint("sns", __name__)
+app = Flask(__name__, instance_relative_config=True)
 
+# アップロードされたファイルを保存するディレクトリ
+UPLOAD_FOLDER = 'flaskr/static/images'
+# ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+file_ = ""
+# ファイルの拡張子が許可されているかチェック
+def allowed_file(filename):
+    if  '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
+        return filename.rsplit('.', 1)[1].lower()
+           
 
 @bp.route("/", methods=("GET", "POST"))
 def index():
-    """Show all the posts, most recent first."""
-
-    db = get_db()
-
-    posts = db.execute(
-        "SELECT p.id, title, body, created, author_id, username"
-        " FROM post p JOIN user u ON p.author_id = u.id"
-        " ORDER BY created DESC"
-    ).fetchall()
     
+    db = get_db()
+    user_id = session.get("user_id")
 
 
-    return render_template("sns/index.html", posts=posts)
+
+    if user_id is None:
+        g.user = None
+        return render_template("sns/index.html", post=None)
+    else:
+        g.user = (
+            get_db().execute("SELECT * FROM user WHERE id = ?", (user_id,)).fetchone()
+        )
+
+    post = (
+    get_db()
+    .execute(
+        "SELECT u.id, username, details"
+        " FROM  user u "
+        " WHERE u.id = ?",
+        (user_id,),
+    )
+    .fetchone()
+    )
+
+    
+    path = 'static/images/'+ str(user_id) +'.png'
+
+    return render_template("sns/index.html", post=post, path=path)
 
 def get_post(id, check_author=True):
     """Get a post and its author by id.
@@ -129,3 +162,46 @@ def delete(id):
     db.execute("DELETE FROM post WHERE id = ?", (id,))
     db.commit()
     return redirect(url_for("sns.index"))
+
+@bp.route("/profile_create", methods=("GET", "POST"))
+@login_required
+def profile_create():
+    if request.method == "POST":
+
+            # ファイルがリクエスト内にない場合
+        if 'image' not in request.files:
+            flash('ファイルがありません')
+            return redirect(request.url)
+        file = request.files['image']
+        # ユーザーがファイルを選択せずに送信した場合、ブラウザは
+        # 空のファイル名を送信する
+        if file.filename == '':
+            flash('ファイルが選択されていません')
+            return redirect(request.url)
+        file_ = allowed_file(file.filename)
+        if file and file_:
+            filename = secure_filename(file.filename)
+            # ファイルを保存
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], str(g.user["id"])+"."+file_))
+            
+        
+
+        title = request.form["title"]
+        body = request.form["body"]
+        error = None
+
+        if not title:
+            error = "Title is required."
+
+        if error is not None:
+            flash(error)
+        else:
+            db = get_db()
+            db.execute(
+                "UPDATE user SET username = ?, details = ? WHERE id = ?", (title, body, g.user["id"])
+            )
+            db.commit()
+        return redirect(url_for("sns.index"))
+
+    else:
+        return render_template('sns/profile.html')

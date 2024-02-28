@@ -64,8 +64,8 @@ def register():
         if error is None:
             try:
                 db.execute(
-                    "INSERT INTO user (username, password) VALUES (?, ?)",
-                    (username, generate_password_hash(password)),
+                    "INSERT INTO user (username, password, details) VALUES (?, ?, ?)",
+                    (username, generate_password_hash(password), "No details"),
                 )
                 db.commit()
             except db.IntegrityError:

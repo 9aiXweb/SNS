@@ -1,10 +1,20 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h1>{% block title %}{% endblock %}</h1>
+  <h1>{% block title %} Profile {% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
+<form method="post" enctype="multipart/form-data">
+    <label for="title"> Name </label>
+    <input name="title" id="title"  required>
+    <label for="body"> Details </label>
+    <textarea name="body" id="body"></textarea>
+  
+    <label for="imageUpload">Select a Photo</label>
+    <input type="file" id="imageUpload" name="image" accept="image/*">
+    <input type="submit" value="Save">
+  </form>
 
 
 {% endblock %}

@@ -133,3 +133,11 @@ html {
     min-width: 10em;
   }
   
+  .box {
+    width: 200px; /* Width of the content area */
+    height: 100px; /* Height of the content area */
+    padding: 20px; /* Space between content and border */
+    border: 5px solid black; /* Border around the padding */
+    margin: 10px; /* Space between border and other elements */
+    background-color: lightblue; /* Background color of the box */
+  }
