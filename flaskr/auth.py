@@ -116,3 +116,61 @@ def logout():
     """Clear the current session, including the stored user id."""
     session.clear()
     return redirect(url_for("index"))
+
+@bp.route("/friends", methods=("GET", "POST"))
+def friends():
+    if request.method == "POST":
+        user_id = session.get("user_id")
+
+
+
+        if user_id is None:
+            g.user = None
+            return render_template("auth/friends.html", post=None)
+        else:
+            g.user = (
+                get_db().execute("SELECT * FROM user WHERE id = ?", (user_id,)).fetchone()
+            )
+
+        if request.form.get("friend") is None:
+            return render_template("auth/friends.html", post=None)
+
+        friends_id = request.form["friend"]
+        db = get_db()
+        try:
+            db.execute(
+                "INSERT INTO friendrequest (request_id, friend_id) VALUES (?, ?)",
+                (int(user_id), int(friends_id))
+            )
+            db.commit()
+        except Exception as e:
+            print("Error:", e)
+            # Rollback the transaction if an error occurs
+            db.rollback()
+
+        friend_request= (
+        get_db()
+        .execute(
+            "SELECT p.request_id, friend_id"
+            " FROM friendrequest p JOIN user u ON p.request_id = u.id"
+            " WHERE p.request_id = ?",
+            (int(user_id),),
+        )
+        .fetchone()
+        )
+        
+        for i in range(0, len(friend_request), 2):
+            sender_id = friend_request[i]
+            receiver_id = friend_request[i + 1]
+
+            if receiver_id == int(user_id):
+                db.execute(
+                    "INSERT INTO friendship (my_id, friend_id) VALUES (?, ?)",
+                    (int(user_id), int(sender_id))
+                )
+                db.commit()
+
+                
+        return redirect(url_for("index"))
+    else:
+        return render_template("auth/friends.html")

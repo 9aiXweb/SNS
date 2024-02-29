@@ -3,29 +3,25 @@
 {% block header %}
 <h1>{% block title %}Facebook Tabao{% endblock title %}</h1>
 
-
+<li><a href="{{ url_for('auth.friends') }}">Friends</a>
 <a class="action" href="{{ url_for('sns.profile_create') }}">Profile</a>
-
+<a class="action" href="{{ url_for('sns.chat') }}">Chat</a>
 
 {% endblock %}
-{% block content %}
 
+{% block content %}
       <article class="post">
             <header>
+                <body>
+                    <img src="{{ path }}" width="125" height="150">
+                </body>
             <div class="box">
                 <h2>{{ post['username'] }}</h2>
                 <hr>
                 <p>{{ post['details'] }} </p>
             </div>
-    
             </header>
       </article>
-<body>
-    <h1>Display Local Image in Flask</h1>
-
-    <img src="{{ path }}" width="500" height="600">
-
-</body>
 {% endblock %}
 
 

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %} Chat {% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<article class="post">
+  <h3>ME: {{ g.user['id'] }}</h3> 
+  <div class="box">
+    <p>MESSAGE:  {{ msg_content }}</p>
+  </div>
+  <hr>
+<header>
+  <form method="post" enctype="multipart/form-data">
+      <label for="receiver_id"> receiver_id </label>
+      <input name="receiver_id" id="receiver_id">
+      <label for="message_content"> Messege Content </label>
+      <input name="message_content" id="message_content" >
+      <input type="submit" value="Send">
+  </form>
+</header>
+</article>
+
+
+{% endblock %}

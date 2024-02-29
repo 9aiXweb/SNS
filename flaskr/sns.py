@@ -205,3 +205,80 @@ def profile_create():
 
     else:
         return render_template('sns/profile.html')
+
+       
+@bp.route('/chat', methods=['GET', 'POST'])
+def chat():
+    user_id = session.get("user_id")
+    if user_id is None:
+        g.user = None
+        return render_template("auth/friends.html", post=None)
+    else:
+        g.user = (
+            get_db().execute("SELECT * FROM user WHERE id = ?", (user_id,)).fetchone()
+        )
+
+    if request.method == 'POST':
+        # Get the recipient user id from the request
+        receiver_id = request.form["receiver_id"]
+        
+        # Get the message content from the request
+        message_content = request.form["message_content"]
+        
+        # Save the message to the database
+        db = get_db()
+        db.execute(
+            "INSERT INTO message (sender_id, receiver_id, message_content) VALUES (?, ?, ?)",
+            (g.user["id"], receiver_id, message_content),
+        )
+        db.commit()
+
+        flash("before:")
+        flash("receive_id:  " + receiver_id)
+        flash("\n message_content:  " + message_content)
+
+        message = (
+            get_db()
+            .execute(
+                "SELECT receiver_id, message_content"
+                " FROM message"
+                " WHERE receiver_id = ?",
+                (int(receiver_id),),
+            )
+            .fetchone()
+        )
+
+        if message:
+            receiver_id = message["receiver_id"]
+            message_content = message["message_content"]
+        else:
+            receiver_id = None
+            message_content = None
+        flash("after:")
+        flash(f'receive_id:{receiver_id}')
+        flash("\n message_content:  " + message_content)
+        
+        # Redirect to the chat page
+        return render_template("sns/chat.html", rec_id=receiver_id, msg_content=message_content)
+    else:
+        message = (
+            get_db()
+            .execute(
+                "SELECT receiver_id, message_content"
+                " FROM message"
+                " WHERE receiver_id = ?",
+                (int(g.user['id']),),
+            )
+            .fetchone()
+        )
+        if message:
+            receiver_id = message["receiver_id"]
+            message_content = message["message_content"]
+        else:
+            receiver_id = None
+            message_content = None
+        if g.user['id'] == receiver_id:
+            return render_template("sns/chat.html", msg_content=message_content)
+
+    # Redirect to the chat page
+        return render_template("sns/chat.html", rec_id=None, msg_content=None)
