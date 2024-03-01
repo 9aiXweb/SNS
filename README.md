@@ -6,3 +6,6 @@
 - メッセージング
 
  
+ python -m venv .venv
+ .\.venv\Scripts\Activate
+ flask --app flaskr run --debug --port 8888
