@@ -6,6 +6,7 @@
 <li><a href="{{ url_for('auth.friends') }}">Friends</a>
 <a class="action" href="{{ url_for('sns.profile_create') }}">Profile</a>
 <a class="action" href="{{ url_for('sns.chat') }}">Chat</a>
+<p>id:{{ g.user["id"] }}</p>
 
 {% endblock %}
 
