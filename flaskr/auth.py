@@ -158,19 +158,36 @@ def friends():
         )
         .fetchone()
         )
-        
-        for i in range(0, len(friend_request), 2):
-            sender_id = friend_request[i]
-            receiver_id = friend_request[i + 1]
+        my_friend_ids = db.execute("SELECT request_id FROM friendrequest").fetchall()
+        friend_ids = db.execute("SELECT friend_id FROM friendrequest").fetchall()
 
-            if receiver_id == int(user_id):
-                db.execute(
-                    "INSERT INTO friendship (my_id, friend_id) VALUES (?, ?)",
-                    (int(user_id), int(sender_id))
-                )
-                db.commit()
+
+        # for row in friend_ids:
+        #     flash(row["friend_id"])
+
+        index_of = [index for index, row in enumerate(friend_ids) if row["friend_id"] == int(user_id)]
+
+        # 友達のIDが5である要素のインデックス番号に対応する友達のIDを取得する
+        my_friend = []
+        for index in index_of:
+            my_friend.append(my_friend_ids[index]["request_id"])
+
+
+        for friend in my_friend:
+            db = get_db()
+            db.execute(
+                "INSERT INTO friendship (my_id, friend_id) VALUES (?, ?)",
+                (int(user_id), int(friend))
+            )
+            db.execute(
+                "INSERT INTO friendship (my_id, friend_id) VALUES (?, ?)",
+                (int(friend), int(user_id))
+            )
+            db.commit()
+
 
                 
-        return redirect(url_for("index"))
+        # return redirect(url_for("index"))
+        return render_template("auth/friends.html")
     else:
         return render_template("auth/friends.html")
