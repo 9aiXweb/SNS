@@ -180,7 +180,7 @@ def profile_create():
             return redirect(request.url)
         file_ = allowed_file(file.filename)
         if file and file_:
-            filename = secure_filename(file.filename)
+            # filename = secure_filename(file.filename)
             # ファイルを保存
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], str(g.user["id"])+"."+file_))
             
@@ -233,9 +233,6 @@ def chat():
         )
         db.commit()
 
-        flash("before:")
-        flash("receive_id:  " + receiver_id)
-        flash("\n message_content:  " + message_content)
 
         message = (
             get_db()
@@ -247,6 +244,7 @@ def chat():
             )
             .fetchone()
         )
+       
 
         if message:
             receiver_id = message["receiver_id"]
@@ -254,9 +252,7 @@ def chat():
         else:
             receiver_id = None
             message_content = None
-        flash("after:")
-        flash(f'receive_id:{receiver_id}')
-        flash("\n message_content:  " + message_content)
+
         
         # Redirect to the chat page
         return render_template("sns/chat.html", rec_id=receiver_id, msg_content=message_content)
@@ -264,7 +260,7 @@ def chat():
         message = (
             get_db()
             .execute(
-                "SELECT receiver_id, message_content"
+                "SELECT receiver_id, sender_id, message_content"
                 " FROM message"
                 " WHERE receiver_id = ?",
                 (int(g.user['id']),),
@@ -273,12 +269,28 @@ def chat():
         )
         if message:
             receiver_id = message["receiver_id"]
+            sender_id = message["sender_id"]
             message_content = message["message_content"]
         else:
             receiver_id = None
+            sender_id = None
             message_content = None
-        if g.user['id'] == receiver_id:
-            return render_template("sns/chat.html", msg_content=message_content)
+        
+        db = get_db()
+
+        friend_1 = db.execute("SELECT my_id FROM friendship").fetchall()
+        friend_2 = db.execute("SELECT friend_id FROM friendship").fetchall()
+        
+
+        index_of = [index for index, row in enumerate(friend_1) if row["my_id"] == int(user_id)]
+       
+        # 友達のIDが5である要素のインデックス番号に対応する友達のIDを取得する
+        my_friend = []
+        for index in index_of:
+            my_friend.append(friend_2[index]["friend_id"])
+        
+        if g.user['id'] == receiver_id and ( sender_id in my_friend ):
+             return render_template("sns/chat.html", msg_content=message_content)
 
     # Redirect to the chat page
         return render_template("sns/chat.html", rec_id=None, msg_content=None)
